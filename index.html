@@ -21,12 +21,12 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 20px;
+      gap: 5%;
       margin-bottom: 30px;
     }
     .spinner {
-      width: 150px;
-      height: 150px;
+      width: 200px;
+      height: 200px;
       perspective: 1000px;
     }
     .spinner img {
@@ -38,67 +38,111 @@
     button {
       margin-top: 10px;
       padding: 8px 16px;
+      height: 75px;
+      width: 150px;
       font-size: 14px;
       background: #222;
       border: 1px solid #555;
       color: white;
       cursor: pointer;
+      object-fit: contain;
       border-radius: 4px;
     }
   </style>
 </head>
 <body>
   <div class="gallery">
-    <div class="spinner-container">
       <div class="spinner" id="spinner0">
-        <img src="DaleCharman.jpg" alt="Dale Charman 0" />
+        <img src="DaleCharman.jpg" alt="Dale Charman 0" onclick="spinWithMomentum('spinner0')"/>
       </div>
-      <button onclick="spinWithMomentum('spinner0')">Spin him</button>
-    </div>
-    <div class="spinner-container">
       <div class="spinner" id="spinner1">
-        <img src="DaleCharman1.jpg" alt="Dale Charman 1" />
+        <img src="DaleCharman1.jpg" alt="Dale Charman 1" onclick="spinWithMomentum('spinner1')"/>
       </div>
-      <button onclick="spinWithMomentum('spinner1')">Spin him</button>
-    </div>
-    <div class="spinner-container">
       <div class="spinner" id="spinner2">
-        <img src="DaleCharman2.jpg" alt="Dale Charman 2" />
+        <img src="DaleCharman2.jpg" alt="Dale Charman 2" onclick="spinWithMomentum('spinner2')"/>
       </div>
-      <button onclick="spinWithMomentum('spinner2')">Spin him</button>
-    </div>
-    <div class="spinner-container">
       <div class="spinner" id="spinner3">
-        <img src="DaleCharman3.jpg" alt="Dale Charman 3" />
+        <img src="DaleCharman3.jpg" alt="Dale Charman 3" onclick="spinWithMomentum('spinner3')"/>
       </div>
-      <button onclick="spinWithMomentum('spinner3')">Spin him</button>
-    </div>
-    <div class="spinner-container">
       <div class="spinner" id="spinner4">
-        <img src="DaleCharman4.jpg" alt="Dale Charman 4" />
+        <img src="DaleCharman4.jpg" alt="Dale Charman 4" onclick="spinWithMomentum('spinner4')"/>
       </div>
-      <button onclick="spinWithMomentum('spinner4')">Spin him</button>
-    </div>
-    <div class="spinner-container">
       <div class="spinner" id="spinner5">
-        <img src="DaleCharman5.jpg" alt="Dale Charman 5" />
+        <img src="DaleCharman5.jpg" alt="Dale Charman 5" onclick="spinWithMomentum('spinner5')"/>
       </div>
-      <button onclick="spinWithMomentum('spinner5')">Spin him</button>
-    </div>
+      <button onclick="release_charmans()">Release them!</button>
   </div>
 
   <script>
+    let spinners = {};
+    const friction_r = 0.99;
+    const friction_v = 0.95;
+
+    function default_setup(id) {
+      if (!spinners[id]) {
+          const spinner = document.getElementById(id).querySelector('img');
+          spinners[id] = {
+            el: spinner,
+            rotx: 0,
+            roty: 0,
+            rotz: 0,
+            vrotx: 0,
+            vroty: 0,
+            vrotz: 0,
+            x: 0,
+            y: 0,
+            velx: 0,
+            vely: 0,
+          };
+      }
+      return spinners[id]
+    }
+
+
+    function release_charmans() {
+      for (let i = 0; i < 6; i++) {
+        const id = `spinner${i}`;
+        const data = default_setup(id);
+        data.velx = (Math.random() * 50 + 5) * (Math.random() < 0.5 ? -1 : 1);
+        data.vely = (Math.random() * 50 + 5) * (Math.random() < 0.5 ? -1 : 1);
+
+        function animate() {
+          data.x += data.velx;
+          data.y += data.vely;
+          upDale(data);
+          data.velx *= friction_v;
+          data.vely *= friction_v;
+          data.velz *= friction_v;
+
+          if (Math.abs(data.velx) > 0.05 || Math.abs(data.vely) > 0.05) {
+            requestAnimationFrame(animate);
+          }
+        }
+        animate();
+      }
+    }
+
+    function upDale(data) {
+      data.el.style.transformOrigin = `${data.x+(data.el.width/2)}px ${data.y+(data.el.height/2)}px`;
+      data.el.style.transform = `rotateX(${data.rotx}deg) rotateY(${data.roty}deg) rotateZ(${data.rotz}deg) translate3d(${data.x}px, ${data.y}px, 0px)`;
+    }
+
     function spinWithMomentum(id) {
-      const spinner = document.getElementById(id).querySelector('img');
-      let rotation = 0;
-      let velocity = 20;
-      const friction = 0.95;
+      const data = default_setup(id);
+      data.vrotx = (Math.random() * 6 + 2) * (Math.random() < 0.5 ? -1 : 1);
+      data.vroty = (Math.random() * 6 + 2) * (Math.random() < 0.5 ? -1 : 1);
+      data.vrotz = (Math.random() * 6 + 2) * (Math.random() < 0.5 ? -1 : 1);
 
       function animate() {
-        rotation += velocity;
-        spinner.style.transform = `rotateY(${rotation}deg)`;
-        velocity *= friction;
-        if (Math.abs(velocity) > 0.1) {
+        data.rotx += data.vrotx;
+        data.roty += data.vroty;
+        data.rotz += data.vrotz;
+        upDale(data);
+        data.vrotx *= friction_r;
+        data.vroty *= friction_r;
+        data.vrotz *= friction_r;
+
+        if (Math.abs(data.vrotx) > 0.05 || Math.abs(data.vroty) > 0.05 || Math.abs(data.vrotz) > 0.05) {
           requestAnimationFrame(animate);
         }
       }
