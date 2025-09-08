@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spin Dale</title>
+  <title>Dale Dice</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <style>
     body {
       margin: 0;
@@ -16,139 +18,127 @@
       overflow: hidden;
       color: white;
       font-family: sans-serif;
+      gap: 100px;
     }
-    .gallery {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 5%;
-      margin-bottom: 30px;
+
+    .scene {
+      width: 200px;
+      height: 200px;
+      perspective: 800px;
+      cursor: pointer;
     }
-    .spinner {
-      width: 150px;
-      height: 150px;
-      perspective: 1000px;
-    }
-    .spinner img {
+
+    .cube {
       width: 100%;
       height: 100%;
-      object-fit: contain;
       transform-style: preserve-3d;
+      transition: transform 0.5s;
     }
-    button {
-      margin-top: 10px;
-      padding: 8px 16px;
-      height: 75px;
-      width: 150px;
-      font-size: 14px;
-      background: #222;
-      border: 1px solid #555;
-      color: white;
-      cursor: pointer;
-      object-fit: contain;
-      border-radius: 4px;
+
+    .face {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      backface-visibility: hidden;
+    }
+
+    .face img {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      border-radius: 10px;
+    }
+
+    .front {
+      transform: rotateY(0deg) translateZ(100px);
+    }
+
+    .back {
+      transform: rotateY(180deg) translateZ(100px);
+    }
+
+    .right {
+      transform: rotateY(90deg) translateZ(100px);
+    }
+
+    .left {
+      transform: rotateY(-90deg) translateZ(100px);
+    }
+
+    .top {
+      transform: rotateX(90deg) translateZ(100px);
+    }
+
+    .bottom {
+      transform: rotateX(-90deg) translateZ(100px);
     }
   </style>
 </head>
+
 <body>
-  <div class="gallery">
-      <div class="spinner" id="spinner0">
-        <img src="DaleCharman.jpg" alt="Dale Charman 0" onclick="spinWithMomentum('spinner0')"/>
-      </div>
-      <div class="spinner" id="spinner1">
-        <img src="DaleCharman1.jpg" alt="Dale Charman 1" onclick="spinWithMomentum('spinner1')"/>
-      </div>
-      <div class="spinner" id="spinner2">
-        <img src="DaleCharman2.jpg" alt="Dale Charman 2" onclick="spinWithMomentum('spinner2')"/>
-      </div>
-      <div class="spinner" id="spinner3">
-        <img src="DaleCharman3.jpg" alt="Dale Charman 3" onclick="spinWithMomentum('spinner3')"/>
-      </div>
-      <div class="spinner" id="spinner4">
-        <img src="DaleCharman4.jpg" alt="Dale Charman 4" onclick="spinWithMomentum('spinner4')"/>
-      </div>
-      <div class="spinner" id="spinner5">
-        <img src="DaleCharman5.jpg" alt="Dale Charman 5" onclick="spinWithMomentum('spinner5')"/>
-      </div>
-      <button onclick="release_charmans()">Release them!</button>
+  <div class="scene">
+    <div class="cube" id="cube">
+      <div class="face front"><img src="DaleCharman0.jpg" alt="1"></div>
+      <div class="face back"><img src="DaleCharman1.jpg" alt="2"></div>
+      <div class="face right"><img src="DaleCharman2.jpg" alt="3"></div>
+      <div class="face left"><img src="DaleCharman3.jpg" alt="4"></div>
+      <div class="face top"><img src="DaleCharman4.jpg" alt="5"></div>
+      <div class="face bottom"><img src="DaleCharman5.jpg" alt="6"></div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="cube" id="cube2" onclick=rollDice>
+      <div class="face front"><img src="DaleCharman0.jpg" alt="1"></div>
+      <div class="face back"><img src="DaleCharman1.jpg" alt="2"></div>
+      <div class="face right"><img src="DaleCharman2.jpg" alt="3"></div>
+      <div class="face left"><img src="DaleCharman3.jpg" alt="4"></div>
+      <div class="face top"><img src="DaleCharman4.jpg" alt="5"></div>
+      <div class="face bottom"><img src="DaleCharman5.jpg" alt="6"></div>
+    </div>
   </div>
 
   <script>
-    let spinners = {};
-    const friction_r = 0.99;
-    const friction_v = 0.95;
+    const cube = document.getElementById("cube");
+    const cube2 = document.getElementById("cube2")
+    const DAY = 1000 * 60 * 60 * 24;
+    let is_rolling = false;
 
-    function default_setup(id) {
-      if (!spinners[id]) {
-          const spinner = document.getElementById(id).querySelector('img');
-          spinners[id] = {
-            el: spinner,
-            rotx: 0,
-            roty: 0,
-            rotz: 0,
-            vrotx: 0,
-            vroty: 0,
-            vrotz: 0,
-            x: 0,
-            y: 0,
-            velx: 0,
-            vely: 0,
-          };
-      }
-      return spinners[id]
+    function dale_jmp() {
+      window.location.href = "https://www.youtube.com/@dalecharmantravels8057";
     }
 
+    const dirs = [[0, 0], [0, 180], [0, -90], [0, 90], [-90, 0], [90, 0]];
 
-    function release_charmans() {
-      for (let i = 0; i < 6; i++) {
-        const id = `spinner${i}`;
-        const data = default_setup(id);
-        data.velx = (Math.random() * 50 + 5) * (Math.random() < 0.5 ? -1 : 1);
-        data.vely = (Math.random() * 50 + 5) * (Math.random() < 0.5 ? -1 : 1);
+    function rand_spin(rot) {
+      return rot + 360 * Math.floor(Math.random() * 4 + 1);
+    }
 
-        function animate() {
-          data.x += data.velx;
-          data.y += data.vely;
-          upDale(data);
-          data.velx *= friction_v;
-          data.vely *= friction_v;
-          data.velz *= friction_v;
+    function rollDice() {
+      if (is_rolling) return;
+      is_rolling = true;
 
-          if (Math.abs(data.velx) > 0.05 || Math.abs(data.vely) > 0.05) {
-            requestAnimationFrame(animate);
-          }
+      const res = Math.floor(Math.random() * 6);
+      const res2 = Math.floor(Math.random() * 6);
+      const [x, y] = dirs[res];
+      const [x2, y2] = dirs[res2];
+
+      cube.style.transform = `rotateX(${rand_spin(x)}deg) rotateY(${rand_spin(y)}deg)`;
+      cube2.style.transform = `rotateX(${rand_spin(x2)}deg) rotateY(${rand_spin(y2)}deg)`;
+
+      console.log(res, res2);
+
+      setTimeout(function () {
+        is_rolling = false;
+        if (res + res2 === 10) {
+          dale_jmp();
         }
-        animate();
-      }
+      }, 500);
     }
 
-    function upDale(data) {
-      data.el.style.transformOrigin = `${data.x+(data.el.width/2)}px ${data.y+(data.el.height/2)}px`;
-      data.el.style.transform = `rotateX(${data.rotx}deg) rotateY(${data.roty}deg) rotateZ(${data.rotz}deg) translate3d(${data.x}px, ${data.y}px, 0px)`;
-    }
-
-    function spinWithMomentum(id) {
-      const data = default_setup(id);
-      data.vrotx = (Math.random() * 6 + 2) * (Math.random() < 0.5 ? -1 : 1);
-      data.vroty = (Math.random() * 6 + 2) * (Math.random() < 0.5 ? -1 : 1);
-      data.vrotz = (Math.random() * 6 + 2) * (Math.random() < 0.5 ? -1 : 1);
-
-      function animate() {
-        data.rotx += data.vrotx;
-        data.roty += data.vroty;
-        data.rotz += data.vrotz;
-        upDale(data);
-        data.vrotx *= friction_r;
-        data.vroty *= friction_r;
-        data.vrotz *= friction_r;
-
-        if (Math.abs(data.vrotx) > 0.05 || Math.abs(data.vroty) > 0.05 || Math.abs(data.vrotz) > 0.05) {
-          requestAnimationFrame(animate);
-        }
-      }
-
-      animate();
-    }
+    cube.addEventListener("click", rollDice);
+    cube2.addEventListener("click", rollDice);
   </script>
 </body>
+
 </html>
