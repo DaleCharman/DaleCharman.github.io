@@ -88,7 +88,7 @@
   </div>
 
   <div class="scene">
-    <div class="cube" id="cube2" onclick=rollDice>
+    <div class="cube" id="cube2">
       <div class="face front"><img src="DaleCharman0.jpg" alt="1"></div>
       <div class="face back"><img src="DaleCharman1.jpg" alt="2"></div>
       <div class="face right"><img src="DaleCharman2.jpg" alt="3"></div>
@@ -101,16 +101,175 @@
   <script>
     const cube = document.getElementById("cube");
     const cube2 = document.getElementById("cube2")
-    const DAY = 1000 * 60 * 60 * 24;
     let is_rolling = false;
 
-    function dale_jmp() {
-      window.location.href = "https://www.youtube.com/@dalecharmantravels8057";
+    function daleJmp() {
+      const dinoDaleGm = document.createElement("div");
+      dinoDaleGm.style.position = "fixed";
+      dinoDaleGm.style.top = 0;
+      dinoDaleGm.style.left = 0;
+      dinoDaleGm.style.width = "100%";
+      dinoDaleGm.style.height = "100%";
+      dinoDaleGm.style.background = "#111";
+      dinoDaleGm.style.overflow = "hidden";
+      dinoDaleGm.style.display = "flex";
+      dinoDaleGm.style.alignItems = "flex-end";
+      document.body.innerHTML = "";
+      document.body.appendChild(dinoDaleGm);
+
+      const dale = document.createElement("img");
+      dale.src = "DaleCharman0.jpg";
+      dale.style.position = "absolute";
+      dale.style.left = "50px";
+      dale.style.bottom = "0px";
+      dale.style.width = "80px";
+      dale.style.height = "80px";
+      dale.style.objectFit = "cover";
+      dinoDaleGm.appendChild(dale);
+
+      const trainTrack = document.createElement("div");
+      trainTrack.style.position = "absolute";
+      trainTrack.style.bottom = "0";
+      trainTrack.style.left = "0";
+      trainTrack.style.width = "100%";
+      trainTrack.style.height = "5px";
+      trainTrack.style.background = "white";
+      dinoDaleGm.appendChild(trainTrack);
+
+      let daleY = 0;
+      let velocityY = 0;
+      let velocityX = 10;
+      let gravity = -1.25;
+      let isJumping = false;
+      let obstacles = [];
+      let score = 0;
+      let gameOver = false;
+
+
+      let hiScore = parseInt(localStorage.getItem("daleHiScore") || "0");
+      const hiScoreDisplay = document.createElement("div");
+      hiScoreDisplay.style.position = "absolute";
+      hiScoreDisplay.style.top = "10px";
+      hiScoreDisplay.style.left = "20px";
+      hiScoreDisplay.style.color = "white";
+      hiScoreDisplay.style.font = "20px sans-serif";
+      hiScoreDisplay.textContent = `Hi-Score: ${hiScore}`;
+      dinoDaleGm.appendChild(hiScoreDisplay);
+
+      const scoreDisplay = document.createElement("div");
+      scoreDisplay.style.position = "absolute";
+      scoreDisplay.style.top = "10px";
+      scoreDisplay.style.right = "20px";
+      scoreDisplay.style.color = "white";
+      scoreDisplay.style.font = "20px sans-serif";
+      scoreDisplay.textContent = "Score: 0";
+      dinoDaleGm.appendChild(scoreDisplay);
+
+      const restartBtn = document.createElement("button");
+      restartBtn.textContent = "Restart";
+      restartBtn.style.position = "absolute";
+      restartBtn.style.top = "50%";
+      restartBtn.style.left = "50%";
+      restartBtn.style.transform = "translate(-50%, -50%)";
+      restartBtn.style.padding = "10px 20px";
+      restartBtn.style.fontSize = "20px";
+      restartBtn.style.border = "none";
+      restartBtn.style.borderRadius = "10px";
+      restartBtn.style.background = "#fff";
+      restartBtn.style.color = "#111";
+      restartBtn.style.cursor = "pointer";
+      restartBtn.style.display = "none";
+      dinoDaleGm.appendChild(restartBtn);
+
+      restartBtn.addEventListener("click", daleJmp);
+
+      function jump() {
+        if (!isJumping && !gameOver) {
+          velocityY = 2.5 * velocityX;
+          isJumping = true;
+        }
+      }
+
+      document.addEventListener("keydown", key => {
+        if (key.code === "Space" || key.code === "ArrowUp") {
+          jump();
+        }
+      });
+
+      dinoDaleGm.addEventListener("click", jump);
+      dinoDaleGm.addEventListener("touchstart", jump);
+
+      function spawnObstacle() {
+        if (gameOver) return;
+        const obs = document.createElement("img");
+        obs.src = "obs.jpg";
+        obs.style.position = "absolute";
+        obs.style.bottom = "0";
+        obs.style.right = "0";
+        obs.style.width = "40px";
+        obs.style.height = "40px";
+        obs.style.objectFit = "cover";
+        dinoDaleGm.appendChild(obs);
+        obstacles.push(obs);
+
+        setTimeout(spawnObstacle, (Math.random() * 12_000 + 10_000) / velocityX);
+      }
+
+      setTimeout(spawnObstacle, 2000);
+
+      function loop() {
+        if (gameOver) return;
+
+        daleY += velocityY;
+        velocityY += gravity;
+        if (daleY <= 0) {
+          daleY = 0;
+          velocityY = 0;
+          isJumping = false;
+        }
+        dale.style.bottom = `${daleY}px`;
+
+        obstacles = obstacles.filter(obs => {
+          obs.style.right = `${parseInt(obs.style.right, 10) + velocityX}px`;
+          const daleRect = dale.getBoundingClientRect();
+          const obsRect = obs.getBoundingClientRect();
+          if (
+            daleRect.left < obsRect.right &&
+            daleRect.right > obsRect.left &&
+            daleRect.bottom > obsRect.top
+          ) {
+            gameOver = true;
+            if (score > hiScore) {
+              hiScore = score;
+              localStorage.setItem("daleHiScore", hiScore);
+            }
+
+            scoreDisplay.textContent = `Game Over! Final Score: ${score}`;
+            hiScoreDisplay.textContent = `Hi-Score: ${hiScore}`;
+            restartBtn.style.display = "block";
+            return true;
+          }
+
+          if (obsRect.right < 0) {
+            obs.remove();
+            score++;
+            velocityX *= 1.03;
+            gravity *= 1.0609; // suvat stuff: a is prop to v^2
+            scoreDisplay.textContent = `Score: ${score}`;
+            return false;
+          }
+          return true;
+        });
+
+        requestAnimationFrame(loop);
+      }
+      loop();
     }
+
 
     const dirs = [[0, 0], [0, 180], [0, -90], [0, 90], [-90, 0], [90, 0]];
 
-    function rand_spin(rot) {
+    function randSpin(rot) {
       return rot + 360 * Math.floor(Math.random() * 4 + 1);
     }
 
@@ -123,15 +282,15 @@
       const [x, y] = dirs[res];
       const [x2, y2] = dirs[res2];
 
-      cube.style.transform = `rotateX(${rand_spin(x)}deg) rotateY(${rand_spin(y)}deg)`;
-      cube2.style.transform = `rotateX(${rand_spin(x2)}deg) rotateY(${rand_spin(y2)}deg)`;
+      cube.style.transform = `rotateX(${randSpin(x)}deg) rotateY(${randSpin(y)}deg)`;
+      cube2.style.transform = `rotateX(${randSpin(x2)}deg) rotateY(${randSpin(y2)}deg)`;
 
       console.log(res, res2);
 
-      setTimeout(function () {
+      setTimeout(() => {
         is_rolling = false;
         if (res + res2 === 10) {
-          dale_jmp();
+          daleJmp();
         }
       }, 500);
     }
