@@ -205,18 +205,26 @@
 
     const API_BASE = "https://daleserver.onrender.com";
 
-    async function submitScore(name, score) {
-      const res = await fetch(`${API_BASE}/score`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, score })
-      });
+    async function submitScore(name, score, events) {
+      try {
+        const res = await fetch(`${API_BASE}/score`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            score,
+            // events
+          })
+        });
 
-      if (res.ok) {
-        alert("Score submitted!");
-      } else {
-        const err = await res.json();
-        alert("Error: " + err.detail);
+        if (res.ok) {
+          alert("Score submitted!");
+        } else {
+          const err = await res.json();
+          alert("Error: " + (err.detail || "Unknown error"));
+        }
+      } catch (e) {
+        alert("Network error: " + e.message);
       }
     }
 
@@ -242,12 +250,15 @@
 
       let daleY = 0;
       let velocityY = 0;
-      let velocityX = 10;
-      let gravity = -1.25;
+      let velocityX = 0.6;
+      let gravity = -0.0045;
       let isJumping = false;
       let obstacles = [];
+      let events = [];
       let score = 0;
       let gameOver = false;
+      let lastFrame;
+      let delta;
 
       let hiScore = parseInt(localStorage.getItem("daleHiScore") || "0");
       hiScoreDisplay.textContent = `Hi-Score: ${hiScore}`;
@@ -286,6 +297,7 @@
 
       function jump() {
         if (!isJumping && !gameOver) {
+          events.push({ event: "jmp", timestamp: performance.now() });
           velocityY = 2.5 * velocityX;
           daleImg = (daleImg + 1) % 6;
           dale.src = `DaleCharman${daleImg}.jpg`;
@@ -312,65 +324,77 @@
         obs.style.width = "40px";
         obs.style.height = "40px";
         obs.style.objectFit = "cover";
+
+        events.push({ event: "obs spawn", timestamp: performance.now() });
         dinoDaleGm.appendChild(obs);
         obstacles.push(obs);
 
-        setTimeout(spawnObstacle, (Math.random() * 12_000 + 10_000) / velocityX);
+        setTimeout(spawnObstacle, (Math.random() * 720 + 650) / velocityX);
       }
 
       setTimeout(spawnObstacle, 2000);
 
+      lastFrame = performance.now();
+
       function loop() {
         if (gameOver) return;
+        let tnow = performance.now();
+        delta = tnow - lastFrame;
+        lastFrame = tnow;
 
-        daleY += velocityY;
-        velocityY += gravity;
+        daleY += velocityY * delta;
+        velocityY += gravity * delta;
+
         if (daleY <= 0) {
           daleY = 0;
           velocityY = 0;
           isJumping = false;
         }
+
         dale.style.bottom = `${daleY}px`;
 
-        obstacles = obstacles.filter(obs => {
-          obs.style.right = `${parseInt(obs.style.right, 10) + velocityX}px`;
+        for (let obsi = score; obsi < obstacles.length; obsi++) {
+          const obs = obstacles[obsi];
+          obs.style.right = `${parseInt(obs.style.right, 10) + velocityX * delta}px`;
           const daleRect = dale.getBoundingClientRect();
           const obsRect = obs.getBoundingClientRect();
+
           if (
             daleRect.left < obsRect.right &&
             daleRect.right > obsRect.left &&
             daleRect.bottom > obsRect.top
           ) {
             gameOver = true;
+            events.push({ event: "game over", timestamp: performance.now() });
+            console.log(events);
             if (score > hiScore) {
               hiScore = score;
               localStorage.setItem("daleHiScore", hiScore);
               const playerName = prompt("Enter your name for the leaderboard:");
               if (playerName) {
-                submitScore(playerName, hiScore);
+                submitScore(playerName, hiScore, events);
               }
             }
 
             scoreDisplay.textContent = `Game Over! Final Score: ${score}`;
             hiScoreDisplay.textContent = `Hi-Score: ${hiScore}`;
-
             restartBtn.style.display = "block";
-            return true;
+            return
           }
 
           if (obsRect.right < 0) {
+            events.push({ event: "obs pass", timestamp: performance.now() });
             obs.remove();
             score++;
             velocityX *= 1.03;
             gravity *= 1.0609; // suvat stuff: a is prop to v^2
             scoreDisplay.textContent = `Score: ${score}`;
-            return false;
           }
-          return true;
-        });
+        }
 
         requestAnimationFrame(loop);
       }
+
       loop();
     }
 
@@ -392,8 +416,6 @@
 
       cube.style.transform = `rotateX(${randSpin(x)}deg) rotateY(${randSpin(y)}deg)`;
       cube2.style.transform = `rotateX(${randSpin(x2)}deg) rotateY(${randSpin(y2)}deg)`;
-
-      console.log(res, res2);
 
       setTimeout(() => {
         is_rolling = false;
