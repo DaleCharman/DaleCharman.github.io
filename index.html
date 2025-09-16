@@ -115,6 +115,7 @@
     dinoDaleGm.style.alignItems = "flex-end";
 
     const dale = document.createElement("img");
+    let daleImg = 0;
     dale.src = "DaleCharman0.jpg";
     dale.style.position = "absolute";
     dale.style.left = "50px";
@@ -286,6 +287,8 @@
       function jump() {
         if (!isJumping && !gameOver) {
           velocityY = 2.5 * velocityX;
+          daleImg = (daleImg + 1) % 6;
+          dale.src = `DaleCharman${daleImg}.jpg`;
           isJumping = true;
         }
       }
