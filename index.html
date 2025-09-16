@@ -103,37 +103,140 @@
     const cube2 = document.getElementById("cube2")
     let is_rolling = false;
 
+    const dinoDaleGm = document.createElement("div");
+    dinoDaleGm.style.position = "fixed";
+    dinoDaleGm.style.top = 0;
+    dinoDaleGm.style.left = 0;
+    dinoDaleGm.style.width = "100%";
+    dinoDaleGm.style.height = "100%";
+    dinoDaleGm.style.background = "#111";
+    dinoDaleGm.style.overflow = "hidden";
+    dinoDaleGm.style.display = "flex";
+    dinoDaleGm.style.alignItems = "flex-end";
+
+    const dale = document.createElement("img");
+    dale.src = "DaleCharman0.jpg";
+    dale.style.position = "absolute";
+    dale.style.left = "50px";
+    dale.style.bottom = "0px";
+    dale.style.width = "80px";
+    dale.style.height = "80px";
+    dale.style.objectFit = "cover";
+
+    const trainTrack = document.createElement("div");
+    trainTrack.style.position = "absolute";
+    trainTrack.style.bottom = "0";
+    trainTrack.style.left = "0";
+    trainTrack.style.width = "100%";
+    trainTrack.style.height = "5px";
+    trainTrack.style.background = "white";
+
+    const hiScoreDisplay = document.createElement("div");
+    hiScoreDisplay.style.position = "absolute";
+    hiScoreDisplay.style.top = "10px";
+    hiScoreDisplay.style.left = "20px";
+    hiScoreDisplay.style.color = "white";
+    hiScoreDisplay.style.font = "20px sans-serif";
+
+    const scoreDisplay = document.createElement("div");
+    scoreDisplay.style.position = "absolute";
+    scoreDisplay.style.top = "10px";
+    scoreDisplay.style.right = "20px";
+    scoreDisplay.style.color = "white";
+    scoreDisplay.style.font = "20px sans-serif";
+
+    const restartBtn = document.createElement("button");
+    restartBtn.textContent = "Restart";
+    restartBtn.style.position = "absolute";
+    restartBtn.style.top = "50%";
+    restartBtn.style.left = "50%";
+    restartBtn.style.transform = "translate(-50%, -50%)";
+    restartBtn.style.padding = "10px 20px";
+    restartBtn.style.fontSize = "20px";
+    restartBtn.style.border = "none";
+    restartBtn.style.borderRadius = "10px";
+    restartBtn.style.background = "#fff";
+    restartBtn.style.color = "#111";
+    restartBtn.style.cursor = "pointer";
+
+    const leaderBtn = document.createElement("button");
+    leaderBtn.style.position = "absolute";
+    leaderBtn.style.top = "50px";
+    leaderBtn.style.right = "20px";
+    leaderBtn.style.padding = "10px 20px";
+    leaderBtn.style.fontSize = "16px";
+    leaderBtn.style.border = "none";
+    leaderBtn.style.borderRadius = "10px";
+    leaderBtn.style.background = "#fff";
+    leaderBtn.style.color = "#111";
+    leaderBtn.style.cursor = "pointer";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "Close";
+    closeBtn.style.marginTop = "15px";
+    closeBtn.style.padding = "8px 16px";
+    closeBtn.style.border = "none";
+    closeBtn.style.borderRadius = "8px";
+    closeBtn.style.background = "#fff";
+    closeBtn.style.color = "#111";
+    closeBtn.style.cursor = "pointer";
+
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.background = "rgba(0,0,0,0.7)";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.zIndex = 1000;
+
+    const board = document.createElement("leaderboard");
+    board.style.background = "#222";
+    board.style.color = "white";
+    board.style.padding = "20px";
+    board.style.borderRadius = "10px";
+    board.style.minWidth = "250px";
+    board.style.maxHeight = "400px";
+    board.style.overflowY = "auto";
+    board.style.textAlign = "center";
+
+    const API_BASE = "https://daleserver.onrender.com";
+
+    async function submitScore(name, score) {
+      const res = await fetch(`${API_BASE}/score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, score })
+      });
+
+      if (res.ok) {
+        alert("Score submitted!");
+      } else {
+        const err = await res.json();
+        alert("Error: " + err.detail);
+      }
+    }
+
+    async function loadLeaderboard() {
+      const res = await fetch(`${API_BASE}/leaderboard`);
+      const data = await res.json();
+
+      board.innerHTML = "<h2>Leaderboard</h2>";
+      board.style.display = "block";
+      data.forEach((entry, i) => {
+        board.innerHTML += `<div>${i + 1}. ${entry.name} : ${entry.score}</div>`;
+      });
+    }
+
     function daleJmp() {
-      const dinoDaleGm = document.createElement("div");
-      dinoDaleGm.style.position = "fixed";
-      dinoDaleGm.style.top = 0;
-      dinoDaleGm.style.left = 0;
-      dinoDaleGm.style.width = "100%";
-      dinoDaleGm.style.height = "100%";
-      dinoDaleGm.style.background = "#111";
-      dinoDaleGm.style.overflow = "hidden";
-      dinoDaleGm.style.display = "flex";
-      dinoDaleGm.style.alignItems = "flex-end";
       document.body.innerHTML = "";
       document.body.appendChild(dinoDaleGm);
+      dinoDaleGm.innerHTML = "";
 
-      const dale = document.createElement("img");
-      dale.src = "DaleCharman0.jpg";
-      dale.style.position = "absolute";
-      dale.style.left = "50px";
-      dale.style.bottom = "0px";
-      dale.style.width = "80px";
-      dale.style.height = "80px";
-      dale.style.objectFit = "cover";
       dinoDaleGm.appendChild(dale);
 
-      const trainTrack = document.createElement("div");
-      trainTrack.style.position = "absolute";
-      trainTrack.style.bottom = "0";
-      trainTrack.style.left = "0";
-      trainTrack.style.width = "100%";
-      trainTrack.style.height = "5px";
-      trainTrack.style.background = "white";
       dinoDaleGm.appendChild(trainTrack);
 
       let daleY = 0;
@@ -145,43 +248,40 @@
       let score = 0;
       let gameOver = false;
 
-
       let hiScore = parseInt(localStorage.getItem("daleHiScore") || "0");
-      const hiScoreDisplay = document.createElement("div");
-      hiScoreDisplay.style.position = "absolute";
-      hiScoreDisplay.style.top = "10px";
-      hiScoreDisplay.style.left = "20px";
-      hiScoreDisplay.style.color = "white";
-      hiScoreDisplay.style.font = "20px sans-serif";
       hiScoreDisplay.textContent = `Hi-Score: ${hiScore}`;
       dinoDaleGm.appendChild(hiScoreDisplay);
 
-      const scoreDisplay = document.createElement("div");
-      scoreDisplay.style.position = "absolute";
-      scoreDisplay.style.top = "10px";
-      scoreDisplay.style.right = "20px";
-      scoreDisplay.style.color = "white";
-      scoreDisplay.style.font = "20px sans-serif";
       scoreDisplay.textContent = "Score: 0";
       dinoDaleGm.appendChild(scoreDisplay);
 
-      const restartBtn = document.createElement("button");
-      restartBtn.textContent = "Restart";
-      restartBtn.style.position = "absolute";
-      restartBtn.style.top = "50%";
-      restartBtn.style.left = "50%";
-      restartBtn.style.transform = "translate(-50%, -50%)";
-      restartBtn.style.padding = "10px 20px";
-      restartBtn.style.fontSize = "20px";
-      restartBtn.style.border = "none";
-      restartBtn.style.borderRadius = "10px";
-      restartBtn.style.background = "#fff";
-      restartBtn.style.color = "#111";
-      restartBtn.style.cursor = "pointer";
       restartBtn.style.display = "none";
+      restartBtn.addEventListener("click", daleJmp);
       dinoDaleGm.appendChild(restartBtn);
 
-      restartBtn.addEventListener("click", daleJmp);
+      leaderBtn.textContent = "Show Leaderboard";
+
+      leaderBtn.addEventListener("click", () => {
+        loadLeaderboard().then(() => {
+          overlay.style.display = "flex";
+          loadLeaderboard();
+        });
+      });
+
+      overlay.style.display = "none";
+      board.style.display = "none";
+
+      closeBtn.addEventListener("click", () => {
+        overlay.style.display = "none";
+        board.style.display = "none";
+      });
+
+      board.appendChild(closeBtn);
+      overlay.appendChild(board);
+      overlay.appendChild(closeBtn);
+      dinoDaleGm.appendChild(overlay);
+
+      dinoDaleGm.appendChild(leaderBtn);
 
       function jump() {
         if (!isJumping && !gameOver) {
@@ -242,10 +342,15 @@
             if (score > hiScore) {
               hiScore = score;
               localStorage.setItem("daleHiScore", hiScore);
+              const playerName = prompt("Enter your name for the leaderboard:");
+              if (playerName) {
+                submitScore(playerName, hiScore);
+              }
             }
 
             scoreDisplay.textContent = `Game Over! Final Score: ${score}`;
             hiScoreDisplay.textContent = `Hi-Score: ${hiScore}`;
+
             restartBtn.style.display = "block";
             return true;
           }
