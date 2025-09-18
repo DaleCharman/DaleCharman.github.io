@@ -99,8 +99,13 @@
   </div>
 
   <script>
+    const cockfosters = new Audio("audale/cockfosters.wav");
+    const comeBack = new Audio("audale/come_back.wav");
+    const heyHoh = new Audio("audale/hey_hoh.wav");
+    const makeDoWithIt = new Audio("audale/make_do_with_it.wav");
+
     const cube = document.getElementById("cube");
-    const cube2 = document.getElementById("cube2")
+    const cube2 = document.getElementById("cube2");
     let is_rolling = false;
 
     const dinoDaleGm = document.createElement("div");
@@ -253,6 +258,7 @@
       let velocityX = 0.6;
       let gravity = -0.0045;
       let isJumping = false;
+      let nextObs = 2000;
       let obstacles = [];
       let events = [];
       let score = 0;
@@ -298,6 +304,7 @@
       function jump() {
         if (!isJumping && !gameOver) {
           events.push({ event: "jmp", timestamp: performance.now() });
+          heyHoh.play();
           velocityY = 2.5 * velocityX;
           daleImg = (daleImg + 1) % 6;
           dale.src = `DaleCharman${daleImg}.jpg`;
@@ -314,32 +321,16 @@
       dinoDaleGm.addEventListener("click", jump);
       dinoDaleGm.addEventListener("touchstart", jump);
 
-      function spawnObstacle() {
-        if (gameOver) return;
-        const obs = document.createElement("img");
-        obs.src = "obs.jpg";
-        obs.style.position = "absolute";
-        obs.style.bottom = "0";
-        obs.style.right = "0";
-        obs.style.width = "40px";
-        obs.style.height = "40px";
-        obs.style.objectFit = "cover";
-
-        events.push({ event: "obs spawn", timestamp: performance.now() });
-        dinoDaleGm.appendChild(obs);
-        obstacles.push(obs);
-
-        setTimeout(spawnObstacle, (Math.random() * 720 + 650) / velocityX);
-      }
-
-      setTimeout(spawnObstacle, 2000);
-
       lastFrame = performance.now();
 
       function loop() {
         if (gameOver) return;
         let tnow = performance.now();
         delta = tnow - lastFrame;
+        if (delta > 40) {
+          delta = 40;
+        }
+
         lastFrame = tnow;
 
         daleY += velocityY * delta;
@@ -353,6 +344,34 @@
 
         dale.style.bottom = `${daleY}px`;
 
+        nextObs -= delta;
+        if (nextObs <= 0) {
+          const obs = document.createElement("img");
+          obs.style.position = "absolute";
+          obs.style.objectFit = "cover";
+          obs.style.right = "0px";
+
+          if (Math.random() < 0.5) {
+            obs.src = "obs.jpg";
+            obs.style.width = "40px";
+            obs.style.height = "40px";
+            obs.style.bottom = "0px";
+          } else {
+            obs.src = "train.jpg";
+            obs.style.width = "80px";
+            obs.style.height = "40px";
+            obs.style.bottom = `${Math.random() * 160 + 10}px`;
+          }
+          cockfosters.play();
+
+          events.push({ event: "obs spawn", timestamp: performance.now() });
+          dinoDaleGm.appendChild(obs);
+          obstacles.push(obs);
+
+          nextObs = (Math.random() * 720 + 650) / velocityX;
+        }
+
+
         for (let obsi = score; obsi < obstacles.length; obsi++) {
           const obs = obstacles[obsi];
           obs.style.right = `${parseInt(obs.style.right, 10) + velocityX * delta}px`;
@@ -362,9 +381,11 @@
           if (
             daleRect.left < obsRect.right &&
             daleRect.right > obsRect.left &&
-            daleRect.bottom > obsRect.top
+            daleRect.bottom > obsRect.top &&
+            daleRect.top < obsRect.bottom
           ) {
             gameOver = true;
+            setTimeout(() => comeBack.play(), 1000);
             events.push({ event: "game over", timestamp: performance.now() });
             console.log(events);
             if (score > hiScore) {
@@ -424,6 +445,8 @@
         is_rolling = false;
         if (res === res2) {
           daleJmp();
+        } else {
+          makeDoWithIt.play();
         }
       }, 500);
     }
