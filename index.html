@@ -370,7 +370,10 @@
             if (score > hiScore) {
               hiScore = score;
               localStorage.setItem("daleHiScore", hiScore);
-              const playerName = prompt("Enter your name for the leaderboard:");
+              let playerName = prompt("Enter your name for the leaderboard:");
+              while (playerName && playerName.length > 20) {
+                playerName = prompt("Name too long, try again:");
+              }
               if (playerName) {
                 submitScore(playerName, hiScore, events);
               }
